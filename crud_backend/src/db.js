@@ -14,3 +14,5 @@ db.on('error', (err) => {
     console.log('unexpected error occured, idle client', err)
     process.exit(-1);
 })
+
+export const query = (text, params) => db.query(text, params)
