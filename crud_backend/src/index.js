@@ -13,9 +13,9 @@ app.use(express.json())
 app.use('/api', clientRoutes)
 
 
-// app.get("/", async (req, res) => {
-//     res.send("<h1>Hello Backend</h1>")
-// });
+app.get("/", async (req, res) => {
+    res.send("<h1>Hello Backend</h1>")
+});
 
 
 
