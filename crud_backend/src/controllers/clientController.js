@@ -1,11 +1,11 @@
-import * as clientService from "../services/clientServices";
+import * as clientService from "../services/clientServices.js";
 
 export const getClients = async (req, res) => {
     try{
         const clients = await clientService.getClients();
         res.status(200).json(clients)
     } catch(err) {
-        console.error('Error fetching clients:', error);
+        console.error('Error fetching clients:', err);
         res.status(500).json({message:'Internal Server Error'})
     }
 }

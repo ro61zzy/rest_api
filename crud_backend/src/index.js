@@ -1,6 +1,7 @@
-const express = require("express");
+// const express = require("express");
+import express from 'express'
 import cors from 'cors'
-import clientRoutes from './routes/clientRoute'
+import clientRoutes from './routes/clientRoute.js'
 
 
 const port = 3005;
