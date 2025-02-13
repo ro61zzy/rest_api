@@ -1,5 +1,6 @@
 const express = require("express");
 import cors from 'cors'
+import clientRoutes from './routes/clientRoute'
 
 
 const port = 3005;
@@ -8,9 +9,12 @@ app.use(cors());
 app.use(express.json())
 
 
-app.get("/", async (req, res) => {
-    res.send("<h1>Hello Backend</h1>")
-});
+app.use('/api', clientRoutes)
+
+
+// app.get("/", async (req, res) => {
+//     res.send("<h1>Hello Backend</h1>")
+// });
 
 
 
