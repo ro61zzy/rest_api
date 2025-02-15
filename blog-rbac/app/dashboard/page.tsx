@@ -13,42 +13,55 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function getUserRole() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth");
-        return;
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+          router.push("/auth");
+          return;
+        }
+
+        setUserEmail(user.email ?? null);
+
+        const { data, error: roleError } = await supabase
+          .from("users")
+          .select("role")
+          .eq("email", user.email)
+          .single();
+
+        if (roleError) {
+          console.error("Error fetching role:", roleError);
+        } else {
+          setRole(data.role);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching user role:", err);
       }
-      
-      setUserEmail(user.email ?? null);
-
-
-      const { data, error } = await supabase
-        .from("users")
-        .select("role")
-        .eq("email", user.email)
-        .single();
-      
-      if (error) console.error(error);
-      else setRole(data.role);
     }
-
-    async function getBlogs(userEmail: string | null) {
-      if (!userEmail) return;
-    
-      let query = supabase.from("blogs").select("*");
-      if (role === "user") {
-        query = query.eq("user_email", userEmail); // Fetch only user blogs
-      }
-    
-      const { data, error } = await query;
-      if (error) console.error(error);
-      else setBlogs(data);
-    }
-    
 
     getUserRole();
-    getBlogs(userEmail);
-  }, []);
+  }, [router]);
+
+  useEffect(() => {
+    async function getBlogs() {
+      if (!userEmail) return;
+
+      let query = supabase.from("blogs").select("*");
+      if (role === "user") {
+        query = query.eq("user_email", userEmail);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error("Error fetching blogs:", error);
+      } else {
+        setBlogs(data);
+      }
+    }
+
+    if (role) {
+      getBlogs();
+    }
+  }, [userEmail, role]); // Ensure blogs load after user role is set
 
   async function approveBlog(blogId: string) {
     const { error } = await supabase
@@ -56,14 +69,52 @@ export default function Dashboard() {
       .update({ status: "approved" })
       .eq("id", blogId);
 
-    if (error) alert(error.message);
-    else {
+    if (error) {
+      alert(error.message);
+    } else {
       alert("Blog approved!");
       setBlogs((prevBlogs) =>
         prevBlogs.map((blog) =>
           blog.id === blogId ? { ...blog, status: "approved" } : blog
         )
       );
+    }
+  }
+
+  async function rejectBlog(blogId: string) {
+    const reason = prompt("Enter reason for rejection:");
+    if (!reason) return;
+
+    const { error } = await supabase
+      .from("blogs")
+      .update({ status: "rejected", rejection_reason: reason })
+      .eq("id", blogId);
+
+    if (error) {
+      alert(error.message);
+    } else {
+      alert("Blog rejected!");
+      setBlogs((prevBlogs) =>
+        prevBlogs.map((blog) =>
+          blog.id === blogId ? { ...blog, status: "rejected", rejection_reason: reason } : blog
+        )
+      );
+    }
+  }
+
+  function editBlog(blog: any) {
+    alert("Edit functionality not implemented yet.");
+  }
+
+  async function deleteBlog(blogId: string) {
+    if (!confirm("Are you sure you want to delete this blog?")) return;
+
+    const { error } = await supabase.from("blogs").delete().eq("id", blogId);
+    if (error) {
+      alert(error.message);
+    } else {
+      alert("Blog deleted!");
+      setBlogs((prevBlogs) => prevBlogs.filter((blog) => blog.id !== blogId));
     }
   }
 
@@ -75,8 +126,9 @@ export default function Dashboard() {
         <div>
           <h2 className="text-xl font-bold mt-4">Pending Blogs</h2>
           {blogs.some((blog) => blog.status === "pending") ? (
-            blogs.map((blog) =>
-              blog.status === "pending" ? (
+            blogs
+              .filter((blog) => blog.status === "pending")
+              .map((blog) => (
                 <div key={blog.id} className="border p-4 mb-2">
                   <h3 className="text-lg font-bold">{blog.title}</h3>
                   <p>{blog.content}</p>
@@ -86,9 +138,14 @@ export default function Dashboard() {
                   >
                     Approve
                   </button>
+                  <button
+                    className="bg-red-500 text-white p-2 mt-2 ml-2"
+                    onClick={() => rejectBlog(blog.id)}
+                  >
+                    Reject
+                  </button>
                 </div>
-              ) : null
-            )
+              ))
           ) : (
             <p>No pending blogs.</p>
           )}
@@ -103,9 +160,10 @@ export default function Dashboard() {
           </p>
 
           <h2 className="text-xl font-bold mt-4">Your Submitted Blogs</h2>
-          {blogs.some((blog) => blog.userEmail === userEmail) ? (
-            blogs.map((blog) =>
-              blog.userEmail === userEmail ? (
+          {blogs.length > 0 ? (
+            blogs
+              .filter((blog) => blog.user_email === userEmail)
+              .map((blog) => (
                 <div key={blog.id} className="border p-4 mb-2">
                   <h3 className="text-lg font-bold">{blog.title}</h3>
                   <p>{blog.content}</p>
@@ -115,15 +173,28 @@ export default function Dashboard() {
                       className={
                         blog.status === "approved"
                           ? "text-green-600"
+                          : blog.status === "rejected"
+                          ? "text-red-600"
                           : "text-orange-600"
                       }
                     >
                       {blog.status}
                     </span>
                   </p>
+                  <button
+                    className="bg-yellow-500 text-white p-2 mt-2"
+                    onClick={() => editBlog(blog)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="bg-red-500 text-white p-2 mt-2 ml-2"
+                    onClick={() => deleteBlog(blog.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-              ) : null
-            )
+              ))
           ) : (
             <p>You have not submitted any blogs yet.</p>
           )}
