@@ -8,48 +8,52 @@ import { useRouter } from "next/navigation";
 export default function Dashboard() {
   const [role, setRole] = useState<string | null>(null);
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [userId, setUserId] =useState()
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    async function getUserRole() {
+    async function getUserData() {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) {
           router.push("/auth");
           return;
         }
-
+  
         setUserEmail(user.email ?? null);
-
-        const { data, error: roleError } = await supabase
+  
+        const { data, error: userError } = await supabase
           .from("users")
-          .select("role")
+          .select("id, role") // Fetch both id and role
           .eq("email", user.email)
           .single();
-
-        if (roleError) {
-          console.error("Error fetching role:", roleError);
+  
+        if (userError) {
+          console.error("Error fetching user data:", userError);
         } else {
-          setRole(data.role);
+          setUserId(data.id); // Store userId
+          setRole(data.role); // Store role
         }
       } catch (err) {
-        console.error("Unexpected error fetching user role:", err);
+        console.error("Unexpected error fetching user data:", err);
       }
     }
-
-    getUserRole();
+  
+    getUserData();
   }, [router]);
+  
 
   useEffect(() => {
     async function getBlogs() {
-      if (!userEmail) return;
-
+      if (!userId) return; // Ensure userId is available
+  
       let query = supabase.from("blogs").select("*");
+  
       if (role === "user") {
-        query = query.eq("user_email", userEmail);
+        query = query.eq("author_id", userId); // Use author_id instead of user_email
       }
-
+  
       const { data, error } = await query;
       if (error) {
         console.error("Error fetching blogs:", error);
@@ -57,11 +61,12 @@ export default function Dashboard() {
         setBlogs(data);
       }
     }
-
+  
     if (role) {
       getBlogs();
     }
-  }, [userEmail, role]); // Ensure blogs load after user role is set
+  }, [userId, role]); // Replace userEmail with userId
+  
 
   async function approveBlog(blogId: string) {
     const { error } = await supabase
@@ -158,11 +163,9 @@ export default function Dashboard() {
               write a blog
             </a>.
           </p>
-
           <h2 className="text-xl font-bold mt-4">Your Submitted Blogs</h2>
           {blogs.length > 0 ? (
-            blogs
-              .filter((blog) => blog.user_email === userEmail)
+           blogs.filter((blog) => blog.author_id === userId)
               .map((blog) => (
                 <div key={blog.id} className="border p-4 mb-2">
                   <h3 className="text-lg font-bold">{blog.title}</h3>
