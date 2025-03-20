@@ -1,22 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-const SECRET = process.env.JWT_SECRET || "supersecretkey";
-
-// Middleware to protect routes
-export function authenticate(req: Request, res: Response, next: NextFunction) {
+export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const token = req.header("Authorization")?.split(" ")[1];
 
-  if (!token) return res.status(401).json({ message: "Access denied" });
+  if (!token) {
+    res.status(401).json({ message: "Access Denied" });
+    return; // Ensure the function stops execution
+  }
 
   try {
-    const decoded = jwt.verify(token, SECRET);
-    (req as any).user = decoded; // Attach user to request object
-    next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    (req as any).user = decoded; // Attach user info to the request object
+    next(); // Call next middleware
   } catch (error) {
-    res.status(403).json({ message: "Invalid token" });
+    res.status(403).json({ message: "Invalid Token" });
+    return; // Ensure function stops execution
   }
 }
