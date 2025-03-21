@@ -56,7 +56,7 @@ router.delete("/:id", (req, res) => {
   const found = users.some((user) => user.id === parseInt(req.params.id));
 
   if (found) {
-    users = users.filter((users) => user.id !== parseInt(req.params.id));
+    users = users.filter((user) => user.id !== parseInt(req.params.id));
     res.json({
       msg: "User deleted",
       users,
