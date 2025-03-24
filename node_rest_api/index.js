@@ -21,4 +21,12 @@ let movies = [
 
 //get 
 
+app.get('/movie', (req, res)=>{
+    res.json(movies)
+})
+
 //post
+
+
+//set server to listen to port
+app.listen(port, () => console.log(`Server listening at port ${port}`))
