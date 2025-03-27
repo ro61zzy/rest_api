@@ -19,9 +19,14 @@ app.get('/', (req, res)=>{
         `)
 })
 
+app.set('views', path.join(__dirname, '/views'))
 
-
-
+app.engine('hbs', exphbs({
+    handlebars: allowInsecurePrototypeAccess(handlebars),
+    extname: 'hbs',
+    defaultLayout:'MainLayout',
+    layoutsDir: __dirname + '/views/layouts/'
+}))
 
 app.listen(2300, ()=>{
     console.log("Server started at port 2300")
