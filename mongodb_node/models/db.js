@@ -1,14 +1,10 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost:27017/StudentDB',{
-    userNewUrlParser: true
-},
-err => {
-    if(!err){
-        console.log('Connection successeeded')
-    }else{
-        console.log("Error in connection"+err)
-    }
+mongoose.connect('mongodb://localhost:27017/StudentDB', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 })
+.then(() => console.log('✅ MongoDB Connected Successfully'))
+.catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-require('./student.model')
+require('./student.model');
