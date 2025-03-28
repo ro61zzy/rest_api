@@ -19,23 +19,24 @@ router.post('/', (req, res) => {
     }
 })
 
-// Function to insert a new student
-function insertRecord(req, res) {
-    var student = new Student({
-        fullName: req.body.fullName,
-        email: req.body.email,
-        mobile: req.body.mobile,
-        city: req.body.city
-    });
+const insertRecord = async (req, res) => {
+    try {
+        const student = new Student({
+            fullName: req.body.fullName,
+            email: req.body.email,
+            mobile: req.body.mobile,
+            city: req.body.city,
+        });
 
-    student.save((err, doc) => {
-        if (!err) {
-            res.redirect('/student/list') // ✅ Correct success handling
-        } else {
-            console.log('Error during insert: ' + err);
-        }
-    })
-}
+        await student.save(); // Use await instead of a callback
+
+        res.redirect("student/list"); // Redirect after successful save
+    } catch (err) {
+        console.error("Error during record insertion:", err);
+        res.status(500).send("Error saving student record");
+    }
+};
+
 
 // Function to update a student
 function updateRecord(req, res) {
@@ -68,9 +69,8 @@ router.get('/:id', async (req, res) => {
         if (student) {
             res.render("student/addOrEdit", {
                 viewTitle: "Update Student",
-                student
+                student // ✅ Make sure this is sent
             });
-            console.log(student);
         } else {
             res.status(404).send("Student not found");
         }
@@ -79,6 +79,7 @@ router.get('/:id', async (req, res) => {
         res.status(500).send("Error retrieving student");
     }
 });
+
 
 
 // ✅ Fix the delete route
